@@ -22,7 +22,7 @@ This project implements a real-time fire and smoke detection system using YOLOv8
 
 1. Clone this repository:
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/Tofiq055/fireandsmokededection
 cd fireandsmokededection
 ```
 
@@ -56,7 +56,7 @@ The project uses a YOLOv8 model trained for fire and smoke detection. The model 
 
 ## License
 
-[Your chosen license]
+None
 
 ## Contributing
 
