@@ -23,18 +23,17 @@ def load_model(path):
         return model, model.names
     except Exception as e:
         st.error(f"Model yüklenirken hata oluştu: {e}")
-        st.error(f"Lütfen '{path}' dosyasının doğru yerde olduğundan ve geçerli bir YOLO modeli olduğundan emin olun.")
-        return None, None
+        st.stop()
 
 model, class_names = load_model(MODEL_PATH)
-
-if not model:
-    st.stop()
 
 # --- Renk Tanımlamaları ---
 COLOR_FIRE = (0, 0, 255)
 COLOR_SMOKE = (0, 255, 255)
 COLOR_DEFAULT = (0, 255, 0)
+
+# --- Sidebar Options ---
+use_dcp = st.sidebar.checkbox("DCP Defense (Model Stealing Protection)", value=True)
 
 # --- Video Yükleyici ---
 uploaded_file = st.file_uploader("🎥 Video dosyasını seçin", type=["mp4", "mov", "avi", "mkv"])
@@ -49,12 +48,10 @@ if uploaded_file is not None:
 
     cap = cv2.VideoCapture(temp_video_path)
     if not cap.isOpened():
-        st.error("Video dosyası açılamadı. Lütfen geçerli bir video dosyası yükleyin.")
+        st.error("Video dosyası açılamadı.")
     else:
         fps = cap.get(cv2.CAP_PROP_FPS)
-        if fps == 0:
-            fps = 25
-            st.warning(f"Video FPS değeri okunamadı, varsayılan olarak {fps} kullanılıyor.")
+        fps = fps if fps > 0 else 25
 
         stframe = st.empty()
         first_fire_detection_time_placeholder = st.empty()
@@ -76,10 +73,20 @@ if uploaded_file is not None:
 
             for result in results:
                 boxes = result.boxes
-                for box in boxes:
-                    cls_index = int(box.cls[0])
+                scores = boxes.conf.cpu().numpy()
+                class_indices = boxes.cls.cpu().numpy().astype(int)
+
+                # --- DCP Perturbation ---
+                if use_dcp and len(scores) > 1:
+                    scores, l1_dist = dcp_perturb(scores)
+                    st.sidebar.write(f"ℓ₁ perturbation: {l1_dist:.4f}")
+                else:
+                    scores = scores
+
+                for i, box in enumerate(boxes):
+                    confidence = float(scores[i])
+                    cls_index = class_indices[i]
                     label = class_names.get(cls_index, f"Class_{cls_index}")
-                    confidence = box.conf[0]
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     label_lower = label.lower()
                     color_to_use = COLOR_DEFAULT
@@ -121,8 +128,9 @@ else:
 st.sidebar.info(
     """
     **Nasıl Kullanılır?**
-    1.  `best.pt` model dosyanızın bu script ile aynı klasörde olduğundan veya yukarıdaki `MODEL_PATH` değişkeninde doğru yolu belirttiğinizden emin olun.
-    2.  "Video dosyasını seçin" butonu ile videonuzu yükleyin.
-    3.  Model videoyu işleyecek ve tespitleri gösterecektir.
+    1. `best.pt` model dosyanız script ile aynı dizinde olmalı.
+    2. Videonuzu yükleyin.
+    3. DCP aktifken model çalıntılara karşı korunur.
     """
 )
+
