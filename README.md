@@ -54,10 +54,4 @@ streamlit run app.py
 
 The project uses a YOLOv8 model trained for fire and smoke detection. The model file (`best.pt`) is included in the repository.
 
-## License
 
-None
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. 
