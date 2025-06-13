@@ -9,6 +9,7 @@ This project implements a real-time fire and smoke detection system using YOLOv8
 - First detection time tracking for both fire and smoke
 - User-friendly Streamlit interface
 - Support for multiple video formats (mp4, mov, avi, mkv)
+- Have DCP protection for stealing models (which is not really important in this case since I also shared the model itself)
 
 ## Requirements
 
